@@ -1,0 +1,16 @@
+plugin: aws_ec2
+regions:
+  - ap-south-1
+filters:
+  tag:Monitoring: enabled
+
+# Yeh ensure karega ki Ansible hamesha EC2 ke public IP se connect kare
+compose:
+  ansible_host: public_ip_address
+  private_ip_address: private_ip_address   # 👈 private IP ko bhi capture karenge
+
+# Grouping based on EC2 tags
+keyed_groups:
+  - key: tags.Role
+    prefix: role
+

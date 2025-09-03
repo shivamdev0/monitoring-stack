@@ -1,0 +1,61 @@
+{
+  "id": null,
+  "title": "Monitoring Overview",
+  "tags": ["infrastructure", "logs", "cloudwatch"],
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "CPU Usage (Prometheus)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance)(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory Usage (Prometheus)",
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "targets": [
+        {
+          "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Application Logs (Loki)",
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "targets": [
+        {
+          "expr": "{job=\"varlogs\"}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU Utilization (CloudWatch)",
+      "datasource": {"type": "cloudwatch", "uid": "CloudWatch"},
+      "targets": [
+        {
+          "region": "ap-south-1",
+          "namespace": "AWS/EC2",
+          "metricName": "CPUUtilization",
+          "statistics": ["Average"],
+          "period": 300,
+          "refId": "A",
+          "dimensions": {
+            "InstanceId": "*"
+          }
+        }
+      ]
+    }
+  ]
+}
+

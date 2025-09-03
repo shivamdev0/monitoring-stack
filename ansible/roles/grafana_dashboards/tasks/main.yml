@@ -1,0 +1,64 @@
+---
+
+# 1️⃣ Check dashboard files on Ansible control node
+- name: Check dashboard files exist locally
+  stat:
+    path: "{{ role_path }}/files/{{ item }}"
+  loop:
+    - node_exporter_dashboard.json
+    - loki_logs_dashboard.json
+  register: dashboards
+  delegate_to: localhost
+  run_once: true
+  become: no   # 🚀 Prevent sudo
+
+- name: Fail if any dashboard file missing
+  fail:
+    msg: "Dashboard file missing: {{ item.item }}"
+  loop: "{{ dashboards.results }}"
+  when: not item.stat.exists
+  delegate_to: localhost
+  run_once: true
+  become: no   # 🚀 Prevent sudo
+
+# 2️⃣ Import dashboards into Grafana (remote server)
+- name: Import Grafana dashboards
+  uri:
+    url: "http://localhost:3000/api/dashboards/db"
+    method: POST
+    user: "{{ grafana_user }}"
+    password: "{{ grafana_password }}"
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      dashboard: "{{ lookup('file', role_path + '/files/' + item) | from_json }}"
+      overwrite: true
+  loop:
+    - node_exporter_dashboard.json
+    - loki_logs_dashboard.json
+  register: grafana_dash_results
+
+# 3️⃣ Debug output
+- name: Show dashboard import results
+  debug:
+    var: grafana_dash_results
+
+#new-add
+
+- name: Import Monitoring Overview dashboard
+  uri:
+    url: "http://localhost:3000/api/dashboards/db"
+    method: POST
+    user: "{{ grafana_user }}"
+    password: "{{ grafana_password }}"
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      dashboard: "{{ lookup('file', 'files/monitoring_dashboard.json') | from_json }}"
+      overwrite: true
+    status_code: 200
+

@@ -1,0 +1,34 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # 1️⃣ Prometheus apna khud ka scrape karega
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # 2️⃣ Node Exporter (EC2 instances ke liye auto-discovery with tags)
+  - job_name: 'ec2-nodes'
+    ec2_sd_configs:
+      - region: ap-south-1
+    relabel_configs:
+      - source_labels: [__meta_ec2_tag_Monitoring]
+        regex: enabled
+        action: keep
+      - source_labels: [__meta_ec2_private_ip]
+        target_label: __address__
+        replacement: ${1}:9100
+    metrics_path: /metrics
+
+
+  # 3️⃣ Loki metrics scrape
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['localhost:3100']
+
+  # 4️⃣ Promtail metrics scrape
+  - job_name: 'promtail'
+    static_configs:
+      - targets: ['localhost:9080']
+

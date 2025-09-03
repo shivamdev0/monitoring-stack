@@ -1,0 +1,109 @@
+---
+# 1️⃣ Add Grafana yum repo
+- name: Add Grafana repo
+  yum_repository:
+    name: grafana
+    description: Grafana OSS
+    baseurl: https://packages.grafana.com/oss/rpm
+    gpgcheck: no
+
+# 2️⃣ Install Grafana
+- name: Install Grafana
+  yum:
+    name: grafana
+    state: present
+
+# 3️⃣ Enable & start Grafana service
+- name: Enable & start Grafana
+  systemd:
+    name: grafana-server
+    enabled: yes
+    state: started
+
+# 4️⃣ Wait until Grafana API is up
+- name: Wait for Grafana to start
+  uri:
+    url: "http://localhost:3000/api/health"
+    method: GET
+    status_code: 200
+  register: grafana_status
+  retries: 20
+  delay: 5
+  until: grafana_status.status == 200
+
+# 5️⃣ Set new Grafana admin password (first run only)
+- name: Configure Grafana admin password
+  uri:
+    url: "http://localhost:3000/api/admin/users/1/password"
+    method: PUT
+    user: "{{ grafana_user }}"
+    password: "{{ grafana_old_password }}"
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      password: "{{ grafana_password }}"
+    status_code: 200
+  register: grafana_pass_reset
+  failed_when: false
+  changed_when: grafana_pass_reset.status == 200
+
+
+# 6️⃣ Add Prometheus datasource
+- name: Add Prometheus datasource
+  uri:
+    url: "http://localhost:3000/api/datasources"
+    method: POST
+    user: "{{ grafana_user }}"
+    password: "{{ grafana_password }}"
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "Prometheus"
+      type: "prometheus"
+      access: "proxy"
+      url: "http://localhost:9090"
+      isDefault: true
+    status_code: [200, 409]  # 409 if already exists
+
+# 7️⃣ Add CloudWatch datasource
+- name: Configure Grafana CloudWatch datasource
+  uri:
+    url: "http://localhost:3000/api/datasources"
+    method: POST
+    user: "{{ grafana_user }}"
+    password: "{{ grafana_password }}"
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "CloudWatch"
+      type: "cloudwatch"
+      access: "proxy"
+      jsonData:
+        authType: "default"   # 👈 EC2 IAM Role use karega
+        defaultRegion: "ap-south-1"
+    status_code: [200, 409]
+# 8️⃣ Add Loki datasource
+- name: Configure Grafana Loki datasource
+  uri:
+    url: "http://localhost:3000/api/datasources"
+    method: POST
+    user: "{{ grafana_user }}"
+    password: "{{ grafana_password }}"
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "Loki"
+      type: "loki"
+      access: "proxy"
+      url: "http://localhost:3100"
+      isDefault: false
+    status_code: [200, 409]   # 409 agar already added hai
+

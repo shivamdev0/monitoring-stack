@@ -1,0 +1,50 @@
+---
+# 1️⃣ Python Bootstrap (run first on all monitoring + clients)
+- hosts: all
+  become: yes
+  gather_facts: no    # ❌ disable facts until Python upgrade done
+  vars:
+    ansible_python_interpreter: /usr/bin/python3   # 👈 force ansible to use /usr/bin/python3
+
+  tasks:
+    - name: Detect current Python version
+      raw: python3 --version || true
+      register: python_check
+      changed_when: false
+
+    - debug:
+        var: python_check.stdout
+
+    - name: Install Python 3.9 on Amazon Linux 2
+      raw: |
+        amazon-linux-extras enable python3.9
+        yum install -y python3.9
+        alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 2
+        alternatives --set python3 /usr/bin/python3.9
+        curl -sS https://bootstrap.pypa.io/get-pip.py | python3.9
+      when: "'3.7' in python_check.stdout"
+      changed_when: true
+
+    - name: Reset SSH connection to use upgraded Python
+      meta: reset_connection
+
+    - name: Verify Python version after upgrade
+      raw: python3 --version
+      register: python_final
+      changed_when: false
+
+    - debug:
+        var: python_final.stdout
+
+
+# 2️⃣ Monitoring setup (only for monitoring role)
+- hosts: role_monitoring
+  become: yes
+  vars_files:
+    - ../group_vars/all.yml
+  roles:
+    - prometheus
+    - grafana
+    - loki
+    - grafana_dashboards
+

@@ -1,0 +1,63 @@
+- name: Download Promtail
+  get_url:
+    url: https://github.com/grafana/loki/releases/download/v2.9.6/promtail-linux-amd64.zip
+    dest: /tmp/promtail.zip
+
+- name: Extract Promtail
+  unarchive:
+    src: /tmp/promtail.zip
+    dest: /usr/local/bin/
+    remote_src: yes
+
+- name: Make executable
+  file:
+    path: /usr/local/bin/promtail-linux-amd64
+    mode: '0755'
+
+- name: Create config directory
+  file:
+    path: /etc/promtail
+    state: directory
+
+- name: Promtail config
+  copy:
+    dest: /etc/promtail/config.yml
+    content: |
+      server:
+        http_listen_port: 9080
+        grpc_listen_port: 0
+      positions:
+        filename: /tmp/positions.yaml
+      clients:
+        - url: http://{{ hostvars[groups['role_monitoring'][0]].private_ip_address }}:3100/loki/api/v1/push
+      scrape_configs:
+        - job_name: system
+          static_configs:
+            - targets:
+                - localhost
+              labels:
+                job: varlogs
+                host: "{{ inventory_hostname }}"
+                __path__: /var/log/*.log
+
+- name: Promtail systemd service
+  copy:
+    dest: /etc/systemd/system/promtail.service
+    content: |
+      [Unit]
+      Description=Promtail
+      After=network.target
+
+      [Service]
+      ExecStart=/usr/local/bin/promtail-linux-amd64 -config.file=/etc/promtail/config.yml
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Start Promtail
+  systemd:
+    name: promtail
+    enabled: yes
+    state: started
+

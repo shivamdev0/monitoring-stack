@@ -1,0 +1,5 @@
+---
+grafana_user: admin
+grafana_old_password: admin   # sirf pehla run ke liye
+grafana_password: admin123    # tumhara naya password
+ansible_python_interpreter: /usr/bin/python3

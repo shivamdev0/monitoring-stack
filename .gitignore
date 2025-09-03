@@ -1,0 +1,32 @@
+# -------------------
+# Python / Ansible
+# -------------------
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.retry
+*.log
+
+# -------------------
+# Terraform
+# -------------------
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+*.tfplan
+
+# -------------------
+# OS / Editor
+# -------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

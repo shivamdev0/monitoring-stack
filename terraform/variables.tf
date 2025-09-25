@@ -1,19 +1,19 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "me-central-1"
+  default     = "ap-south-1"
 }
 
 variable "instance_type" {
   description = "Instance type for monitoring server"
   type        = string
-  default     = "t3.large"
+  default     = "t2.large"
 }
 
 variable "app_instance_type" {
   description = "Instance type for app servers"
   type        = string
-  default     = "t3.large"
+  default     = "t2.large"
 }
 
 variable "app_instance_count" {
@@ -25,7 +25,7 @@ variable "app_instance_count" {
 variable "key_name" {
   description = "SSH key pair name"
   type        = string
-  default     = "monitoring-purpose" # apna AWS key pair yaha rakho
+  default     = "monitoring-key"   # apna AWS key pair yaha rakho
 }
 
 variable "vpc_id" {

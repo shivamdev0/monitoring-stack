@@ -1,34 +1,3 @@
----
-- name: Create promtail user
-  user:
-    name: promtail
-    system: yes
-    create_home: no
-    shell: /sbin/nologin
-
-# Debian/Ubuntu: add promtail to 'adm' group so it can read syslog/auth.log
-- name: Add promtail user to adm group on Debian/Ubuntu
-  user:
-    name: promtail
-    groups: adm
-    append: yes
-  when: ansible_facts['os_family'] == "Debian"
-
-# Detect apache_log_dir if not already defined
-- name: Set apache_log_dir fact for Debian/Ubuntu
-  set_fact:
-    apache_log_dir: "/var/log/apache2"
-  when:
-    - apache_log_dir is not defined
-    - ansible_facts['os_family'] == "Debian"
-
-- name: Set apache_log_dir fact for RedHat/Amazon Linux
-  set_fact:
-    apache_log_dir: "/var/log/httpd"
-  when:
-    - apache_log_dir is not defined
-    - ansible_facts['os_family'] == "RedHat"
-
 - name: Download Promtail
   get_url:
     url: https://github.com/grafana/loki/releases/download/v2.9.6/promtail-linux-amd64.zip
@@ -44,71 +13,32 @@
   file:
     path: /usr/local/bin/promtail-linux-amd64
     mode: '0755'
-    owner: root
-    group: root
 
 - name: Create config directory
   file:
     path: /etc/promtail
     state: directory
-    owner: promtail
-    group: promtail
-    mode: '0755'
 
-- name: Ensure promtail positions dir
-  file:
-    path: /var/lib/promtail
-    state: directory
-    owner: promtail
-    group: promtail
-    mode: '0755'
-
-- name: Promtail config (system + apache logs)
+- name: Promtail config
   copy:
     dest: /etc/promtail/config.yml
     content: |
       server:
         http_listen_port: 9080
         grpc_listen_port: 0
-
       positions:
-        filename: /var/lib/promtail/positions.yaml
-
+        filename: /tmp/positions.yaml
       clients:
         - url: http://{{ hostvars[groups['role_monitoring'][0]].private_ip_address }}:3100/loki/api/v1/push
-
       scrape_configs:
-        # System logs (Ubuntu/Debian)
-        - job_name: syslog_debian
+        - job_name: system
           static_configs:
-            - targets: ['localhost']
+            - targets:
+                - localhost
               labels:
-                job: syslog
+                job: varlogs
                 host: "{{ inventory_hostname }}"
-                __path__: |
-                  /var/log/syslog
-                  /var/log/auth.log
-
-        # System logs (Amazon Linux/RedHat)
-        - job_name: syslog_redhat
-          static_configs:
-            - targets: ['localhost']
-              labels:
-                job: syslog
-                host: "{{ inventory_hostname }}"
-                __path__: |
-                  /var/log/messages
-                  /var/log/secure
-
-        # Apache logs
-        - job_name: apache
-          static_configs:
-            - targets: ['localhost']
-              labels:
-                job: apache
-                host: "{{ inventory_hostname }}"
-                __path__: "{{ apache_log_dir }}/*.log"
-  notify: Restart promtail
+                __path__: /var/log/*.log
 
 - name: Promtail systemd service
   copy:
@@ -119,18 +49,11 @@
       After=network.target
 
       [Service]
-      User=promtail
-      Group=promtail
       ExecStart=/usr/local/bin/promtail-linux-amd64 -config.file=/etc/promtail/config.yml
       Restart=always
 
       [Install]
       WantedBy=multi-user.target
-  notify: Restart promtail
-
-- name: Reload systemd
-  command: systemctl daemon-reload
-  changed_when: false
 
 - name: Start Promtail
   systemd:

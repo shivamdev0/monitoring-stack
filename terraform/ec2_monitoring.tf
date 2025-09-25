@@ -1,6 +1,6 @@
 # Monitoring Server EC2
 resource "aws_instance" "monitoring" {
-  ami                    = data.aws_ami.amazon_linux_2023.id # ✅ AL2023 only
+  ami                    = data.aws_ami.amazon_linux_2023.id   # ✅ AL2023 only
   instance_type          = var.instance_type
   subnet_id              = element(data.aws_subnets.selected.ids, 0)
   key_name               = var.key_name
@@ -21,7 +21,7 @@ data "aws_ami" "amazon_linux_2023" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-x86_64-*"] # 👈 Strict match, only 2023 AMIs
+    values = ["al2023-ami-*-x86_64-*"]   # 👈 Strict match, only 2023 AMIs
   }
 
   filter {

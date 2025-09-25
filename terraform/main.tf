@@ -1,6 +1,6 @@
 # VPC aur Subnets detect karo (agar user ne pass nahi kiya to default use hoga)
 data "aws_vpc" "selected" {
-  id      = var.vpc_id != "" ? var.vpc_id : null
+  id = var.vpc_id != "" ? var.vpc_id : null
   default = var.vpc_id == "" ? true : null
 }
 

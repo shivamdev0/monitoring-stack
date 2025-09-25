@@ -3,5 +3,4 @@
   roles:
     - node_exporter
     - promtail
-    - apache
-    - apache_exporter
+

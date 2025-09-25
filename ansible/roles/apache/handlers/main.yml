@@ -1,6 +1,0 @@
----
-- name: Restart apache
-  systemd:
-    name: "{{ apache_service | default('httpd') }}"
-    state: restarted
-

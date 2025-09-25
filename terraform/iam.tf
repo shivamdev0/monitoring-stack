@@ -22,7 +22,7 @@ resource "aws_iam_role_policy_attachment" "grafana_cloudwatch_attach" {
 
 # IAM Instance Profile (required for EC2)
 resource "aws_iam_instance_profile" "grafana_profile" {
-  name = "grafana-cloudwatch-profile"
+  name = "grafana-cloudwatch-profile-v1"
   role = aws_iam_role.grafana_role.name
 }
 

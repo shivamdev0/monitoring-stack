@@ -1,6 +1,6 @@
 plugin: aws_ec2
 regions:
-  - ap-south-1
+  - me-central-1
 filters:
   tag:Monitoring: enabled
 
